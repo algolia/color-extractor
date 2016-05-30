@@ -1,3 +1,5 @@
+docopt==0.6.2
+ijson==2.3
 numpy==1.11.0
 scikit-learn==0.17.1
 scipy==0.17.1
