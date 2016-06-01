@@ -1,6 +1,6 @@
 # Color Extractor
 
-This project is both a library and a CLI tool to help tag images destined to be
+This project is both a library and a CLI tool to help tag images meant to be
 searched afterwards. Most of the preprocessing steps assume that the images are
 related to e-commerce, meaning that the objects targeted by the algorithms are
 supposed to be mostly centered and with a fairly simple background
@@ -19,12 +19,12 @@ Most of the dependencies can be installed using
 pip install -r requirements.txt
 ```
 
-Note that library and the CLI tool also depends on opencv 3.1.0 and its python 3
+Note that library and the CLI tool also depend on opencv 3.1.0 and its python 3
 bindings.
 For Linux users, the steps to install it are available
 [here](http://www.pyimagesearch.com/2015/07/20/install-opencv-3-0-and-python-3-4-on-ubuntu/).
 For OSX users, the steps to install it are available
-[here](http://www.pyimagesearch.com/2015/06/29/install-opencv-3-0-and-python-3-4-on-osx/)
+[here](http://www.pyimagesearch.com/2015/06/29/install-opencv-3-0-and-python-3-4-on-osx/).
 
 You then just have to ensure that this repository root is present in your
 `PYTHONPATH`.
@@ -39,7 +39,7 @@ trying to guess the main object of the picture and extracting its dominant
 color(s).
 
 The design of the library can be viewed as a pipeline composed of several
-sequential processing. Each of these processing accepts several options in order
+sequential processing. Each of these processings accepts several options in order
 to tune its behavior to better fit your catalog.
 Those processings are (in order):
 
@@ -83,7 +83,7 @@ The file `color_names.pnz` can be found in this repository.
 
 ### Passing Settings
 
-All algorithms can be used right out of the box because of settings tweaked for
+All algorithms can be used right out of the box thanks to settings tweaked for
 the larger range of images possible. Because these settings don't target any
 special kind of catalog, changing them may cause a gain of precision.
 
@@ -110,7 +110,7 @@ This step is available as the `Resize` class.
 
 Pictures with a too high resolution have too much details that can be considered
 as noise when the goal is to find the most dominant colors. Moreover, smaller
-images mean faster processing time. Most of the testing have been done on
+images mean faster processing time. Most of the testing has been done on
 `100x100` images, and it is usually the best compromise between precision and
 speed.
 Most of the time the object of the picture is centered, cropping can make sense
@@ -156,7 +156,7 @@ The available settings are:
 
 - `'edge_thinning'` The second algorithm has the choice of considering detected
   edges as part of the foreground or part of the background. It also can thin
-  the edges while considering them part of the background, which avoid loosing
+  the edges while considering them part of the background, which avoid losing
   too much of the object pixels.
   To consider edges as part of the object `-1` must be passed. To consider edges
   as part of the background `0` or `1` must be passed. All other positive
@@ -226,9 +226,9 @@ We implemented different way of selecting clusters:
 - `'ratio'` keeps the biggest clusters until their total number of pixels
   exceeds a certain percentage of all clustered pixels.
 
-While the outcome off `all` is quite obvious, the use of `largest` versus
+While the outcome of `all` is quite obvious, the use of `largest` versus
 `ratio` is trickier. `largest` will yield very few colors, meaning the chance
-of attributing a tag not really relevant is greatly diminished. On the other
+of assigning a tag not really relevant is greatly diminished. On the other
 hand objects with two colors in equal quantity will see one of them discarded.
 It's up to you to decide which one behaves the best with your catalog.
 
@@ -251,7 +251,7 @@ dictionary of colors taken from the XKCD color survey. Because of the erratic
 distribution of colors (some colors are far more represented that others) a
 KNN behaves in most cases better than more statistical classifiers.
 The "learning" phase of the classifier is done when the object is built, and
-requires that two arrays are passed to its constructor: a array of BGR colors
+requires that two arrays are passed to its constructor: an array of BGR colors
 and an array of the corresponding names. When using the CLI tool, the path
 to an `.npz` numpy archive containing those two matrices must be given.
 
@@ -262,9 +262,9 @@ training phase and a `predict` method for the actual classification.
 The available settings are:
 
 - `'algorithm'` The algorithm to use to perform the classification. Must be
-  either `'knn'` or `'custom'`. If custom is given, `'classifier.class'`' must
+  either `'knn'` or `'custom'`. If custom is given, `'classifier.class'` must
   also be given.
-  Default is `'knn'`'
+  Default is `'knn'`
 
 - `'hard_monochrome'` Monochrome colors (especially gray) may be hard to
   classify, this option makes use of a built in way of qualifying colors as
@@ -324,7 +324,7 @@ image can be (down)loaded from.
 
 ### Enriching JSON
 
-Because we want Algolia customer to be able to enrich their JSON records easily
+Because we want Algolia customers to be able to enrich their JSON records easily
 we provide a class able to stream JSON and add color tags on the fly.
 The object is initialized with the same arguments as `FromFile` plus the name
 of the field where the URI of the images can be found. While reading the JSON
