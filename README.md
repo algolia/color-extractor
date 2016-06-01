@@ -8,9 +8,6 @@ supposed to be mostly centered and with a fairly simple background
 any of those two conditions is not met, but be aware that its precision will
 certainly be hindered.
 
-This tool only takes care of enriching your data. If you want to use Algolia to
-search this enriched data, the configuration of the index is still up to you.
-
 ## Installation
 
 The script and the library are currently targeting python 3 and won't work with
@@ -78,7 +75,8 @@ print(img_to_color.get(img))
 The CLI tool as simply as this:
 
 ```sh
-./color_extractor color_names.npz image.jpg
+./color-extractor color_names.npz image.jpg
+> red,black
 ```
 
 The file `color_names.pnz` can be found in this repository.
@@ -338,5 +336,5 @@ parameter of the constructor.
 Enriching JSON can be used directly from the command line as this:
 
 ```sh
-./color_extractor -j color_names.npz file.json
+./color-extractor -j color_names.npz file.json
 ```
