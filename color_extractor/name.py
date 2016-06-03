@@ -14,7 +14,7 @@ class Name(Task):
     Samples must be a `numpy` array of shape `(n_colors, 3)`.
     Labels must be a `numpy` array of `str` of shape `(n_colors,)`.
     """
-    def __init__(self, samples, labels, settings):
+    def __init__(self, samples, labels, settings=None):
         """
         The possible settings are:
             - algorithm: The algorithm to use for training the classifier.
@@ -48,6 +48,9 @@ class Name(Task):
             - classifier.scale: Use scikit-learn `StandardScaler` prior to
               train the model and classifying samples.
         """
+        if settings is None:
+            settings = {}
+
         super(Name, self).__init__(settings)
 
         algo = self._settings['algorithm']
@@ -102,7 +105,7 @@ class Name(Task):
         luminance = np.sum(sample * Name._GRAY_COEFF)
         if luminance > 45 and luminance < 170:
             colors.append(self._settings['gray_name'])
-        if luminance <= 45:
+        if luminance <= 50:
             colors.append(self._settings['black_name'])
         if luminance >= 170:
             colors.append(self._settings['white_name'])

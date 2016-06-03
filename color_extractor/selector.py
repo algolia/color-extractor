@@ -4,7 +4,10 @@ from .task import Task
 
 
 class Selector(Task):
-    def __init__(self, settings={}):
+    def __init__(self, settings=None):
+        if settings is None:
+            settings = {}
+
         super(Selector, self).__init__(settings)
 
     def get(self, k, labels, centers):

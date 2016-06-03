@@ -10,7 +10,10 @@ class Cluster(Task):
     Use the K-Means algorithm to group pixels by clusters. The algorithm tries
     to determine the optimal number of clusters for the given pixels.
     """
-    def __init__(self, settings={}):
+    def __init__(self, settings=None):
+        if settings is None:
+            settings = {}
+
         super(Cluster, self).__init__(settings)
         self._flags = cv2.KMEANS_RANDOM_CENTERS
         self._crit = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_MAX_ITER, 50,

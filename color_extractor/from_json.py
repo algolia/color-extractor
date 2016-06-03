@@ -9,7 +9,10 @@ from .task import Task
 
 class FromJson(Task):
     def __init__(self, image_field, samples, labels,
-                 colors_field='_color_tags', settings={}):
+                 colors_field='_color_tags', settings=None):
+        if settings is None:
+            settings = {}
+
         super(FromJson, self).__init__(settings)
         self._image_field = image_field
         self._colors_field = colors_field

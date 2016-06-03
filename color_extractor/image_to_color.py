@@ -8,7 +8,11 @@ from .task import Task
 
 
 class ImageToColor(Task):
-    def __init__(self, samples, labels, settings={}):
+    def __init__(self, samples, labels, settings=None):
+
+        if settings is None:
+            settings = {}
+
         super(ImageToColor, self).__init__(settings)
         self._resize = Resize(self._settings['resize'])
         self._back = Back(self._settings['back'])

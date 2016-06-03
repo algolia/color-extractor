@@ -14,7 +14,7 @@ class Back(Task):
     starting from all corners. This part is impacted by the `edge_thinning'
     and `blur_radius' settings.
     """
-    def __init__(self, settings={}):
+    def __init__(self, settings=None):
         """
         The possible settings are:
             - max_distance: The maximum distance for two colors to be
@@ -36,6 +36,9 @@ class Back(Task):
               background removal. This setting must be an odd integer.
               (default: 3)
         """
+        if settings is None:
+            settings = {}
+
         super(Back, self).__init__(settings)
 
         k = self._settings['edge_thinning']

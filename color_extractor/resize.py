@@ -12,7 +12,7 @@ class Resize(Task):
     corners, if the cropping is too important, the object itself may be
     disregarded.
     """
-    def __init__(self, settings={}):
+    def __init__(self, settings=None):
         """
         The possible settings are:
             - crop: The crop ratio to use. `1' means no cropping. A floating
@@ -23,6 +23,9 @@ class Resize(Task):
               and width is kept.
               (default: 100)
         """
+        if settings is None:
+            settings = {}
+
         super(Resize, self).__init__(settings)
 
     def get(self, img):

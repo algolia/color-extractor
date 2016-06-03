@@ -5,7 +5,7 @@ from .task import Task
 
 
 class Skin(Task):
-    def __init__(self, settings={}):
+    def __init__(self, settings=None):
         """
         Skin is detected using color ranges.
 
@@ -15,6 +15,9 @@ class Skin(Task):
               an empty mask is returned.
               (default: 'general')
         """
+        if settings is None:
+            settings = {}
+
         super(Skin, self).__init__(settings)
         self._k = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
 
