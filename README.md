@@ -1,12 +1,12 @@
 # Color Extractor
 
-This project is both a library and a CLI tool to help tag images meant to be
-searched afterwards. Most of the preprocessing steps assume that the images are
-related to e-commerce, meaning that the objects targeted by the algorithms are
-supposed to be mostly centered and with a fairly simple background
-(single color, gradient, low contrast, etc.). The algorithm may still perform if
-any of those two conditions is not met, but be aware that its precision will
-certainly be hindered.
+This project is both a library and a CLI tool to extract the dominant colors of
+the main object of an image. Most of the preprocessing steps assume that the
+images are related to e-commerce, meaning that the objects targeted by the
+algorithms are supposed to be mostly centered and with a fairly simple
+background (single color, gradient, low contrast, etc.). The algorithm may
+still perform if any of those two conditions is not met, but be aware that its
+precision will certainly be hindered.
 
 ## Installation
 
