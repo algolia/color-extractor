@@ -1,9 +1,4 @@
-from os.path import abspath
-from urllib.parse import quote
-from urllib.request import urlopen
-
-import cv2
-import numpy as np
+from skimage.io import imread
 
 from .image_to_color import ImageToColor
 from .task import Task
@@ -18,12 +13,4 @@ class FromFile(Task):
         self._image_to_color = ImageToColor(samples, labels, self._settings)
 
     def get(self, uri):
-        if uri.find('//') == -1:
-            uri = 'file://' + quote(abspath(uri))
-
-        # TODO: Error reporting.
-        resp = urlopen(uri)
-        buf = np.fromstring(resp.read(), np.uint8)
-        img = cv2.imdecode(buf, cv2.IMREAD_COLOR)
-
-        return self._image_to_color.get(img)
+        return self._image_to_color.get(imread(uri))

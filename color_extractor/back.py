@@ -1,5 +1,8 @@
-import cv2
 import numpy as np
+import skimage.filters as skf
+import skimage.color as skc
+import skimage.morphology as skm
+from skimage.measure import label
 
 from .task import Task
 
@@ -27,14 +30,14 @@ class Back(Task):
               (default: True)
 
             - edge_thinning: How much edges must be thinned in the resulting
-              mask. `0' or `1' means no thinning at all, `-1` means considering
+              mask. `0' means no thinning at all, `-1` means considering
               edges as part of the foreground in the resulting mask.
-              (default: 3)
+              (default: 1)
 
-            - blur_radius: The radius of the Gaussian blur used before applying
+            - blur_sigma: The sigma of the Gaussian blur used before applying
               edge detections. A higher value will yield to a more aggressive
-              background removal. This setting must be an odd integer.
-              (default: 3)
+              background removal.
+              (default: 0.8)
         """
         if settings is None:
             settings = {}
@@ -42,21 +45,29 @@ class Back(Task):
         super(Back, self).__init__(settings)
 
         k = self._settings['edge_thinning']
-        if k > 1:
-            self._erode = cv2.getStructuringElement(cv2.MORPH_RECT, (k, k))
+        if k > 0:
+            self._erode = skm.square(k, np.bool)
 
     def get(self, img):
-        return self._floodfill(img) | self._global(img)
+        f = self._floodfill(img)
+        g = self._global(img)
+
+        if np.count_nonzero(f) > 0.95 * f.size:
+            return g
+        elif np.count_nonzero(g) > 0.95 * g.size:
+            return f
+        else:
+            return f | g
 
     def _global(self, img):
         h, w = img.shape[:2]
-        mask = np.zeros((h, w), np.bool)
+        mask = np.zeros((h, w), dtype=np.bool)
         max_distance = self._settings['max_distance']
-        corners = [(0, 0), (h - 1, 0), (0, w - 1), (h - 1, w - 1)]
 
         if self._settings['use_lab']:
-            img = Back._bgr2lab(img)
+            img = skc.rgb2lab(img)
 
+        corners = [(0, 0), (h - 1, 0), (0, w - 1), (h - 1, w - 1)]
         for color in (img[i, j] for i, j in corners):
             norm = np.sqrt(np.sum(np.square(img - color), 2))
             mask |= norm < max_distance
@@ -64,54 +75,43 @@ class Back(Task):
         return mask
 
     def _floodfill(self, img):
-        back = 255 - img
-        back = Back._sobel(back, self._settings['blur_radius'])
-        _, back = cv2.threshold(back, 24, 128, cv2.THRESH_BINARY)
+        back = 1. - img
+        back = Back._sobel(back, self._settings['blur_sigma'])
+
+        back = back > 0.05
+        labels = label(back, background=-1, connectivity=1)
 
         h, w = back.shape[:2]
-        mask = np.zeros((h + 2, w + 2), np.uint8)
-
         corners = [(0, 0), (h - 1, 0), (0, w - 1), (h - 1, w - 1)]
-        for corner in corners:
-            cv2.floodFill(back, mask, corner, 255)
+        flooded = back.copy()
+        for l in (labels[i, j] for i, j in corners):
+            flooded[labels == l] = True
 
         s = self._settings['edge_thinning']
-        if s > 1:
+        if s > 0:
             # Thin edges.
-            contours = np.zeros((h, w), np.uint8)
-            contours[back == 128] = 255
-            contours = cv2.erode(contours, self._erode)
-            idx = (back != 128)
-            contours[idx] = back[idx]
-            back = contours
-        elif s >= 0:
-            # Do not thin the edges.
-            back[back == 128] = 255
-        else:
+            idx = ~back
+            skm.binary_erosion(back, self._erode, out=back)
+            back[idx] = flooded[idx]
+            flooded = back
+        elif s == -1:
             # Ignore edges.
-            back[back == 128] = 0
+            flooded[back] = False
 
-        return back.astype(np.bool)
+        return flooded
 
     @staticmethod
     def _default_settings():
         return {
             'max_distance': 5,
             'use_lab': True,
-            'edge_thinning': 3,
-            'blur_radius': 3,
+            'edge_thinning': 1,
+            'blur_sigma': 0.8,
         }
 
     @staticmethod
-    def _sobel(img, radius):
-        if radius > 0:
-            img = cv2.GaussianBlur(img, (radius, radius), 0)
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        sx = cv2.convertScaleAbs(cv2.Sobel(gray, cv2.CV_16S, 1, 0, ksize=3))
-        sy = cv2.convertScaleAbs(cv2.Sobel(gray, cv2.CV_16S, 0, 1, ksize=3))
-        return (0.5 * sx + 0.5 * sy).astype(np.uint8)
-
-    @staticmethod
-    def _bgr2lab(img):
-        floated = (img / 255.).astype(np.float32)
-        return cv2.cvtColor(floated, cv2.COLOR_BGR2LAB)
+    def _sobel(img, sigma):
+        # if sigma > 0:
+        #     img = skf.gaussian(img, sigma, multichannel=True)
+        gray = skc.rgb2gray(img)
+        return skf.scharr(gray)

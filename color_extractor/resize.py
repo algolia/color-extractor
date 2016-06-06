@@ -1,4 +1,6 @@
-import cv2
+import numpy as np
+from skimage.transform import resize
+from skimage.util import img_as_ubyte
 
 from .task import Task
 
@@ -36,7 +38,7 @@ class Resize(Task):
         src_h, src_w = img.shape[:2]
         dst_h = self._settings['rows']
         dst_w = int((dst_h / src_h) * src_w)
-        return cv2.resize(img, (dst_h, dst_w), interpolation=cv2.INTER_AREA)
+        return resize(img, (dst_h, dst_w))
 
     def _crop(self, img):
         src_h, src_w = img.shape[:2]

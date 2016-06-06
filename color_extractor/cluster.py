@@ -1,5 +1,6 @@
-import cv2
 import numpy as np
+from sklearn.cluster import KMeans
+from skimage.util import img_as_float
 
 from .exceptions import KMeansException
 from .task import Task
@@ -15,9 +16,11 @@ class Cluster(Task):
             settings = {}
 
         super(Cluster, self).__init__(settings)
-        self._flags = cv2.KMEANS_RANDOM_CENTERS
-        self._crit = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_MAX_ITER, 50,
-                      1.0)
+        self._kmeans_args = {
+            'init': 'random',
+            'tol': 0.5,
+            'max_iter': 50,
+        }
 
     def get(self, img):
         a = self._settings['algorithm']
@@ -27,15 +30,15 @@ class Cluster(Task):
             raise ValueError('Unknown algorithm'.format(a))
 
     def _kmeans(self, img, k):
+        kmeans = KMeans(n_clusters=k, **self._kmeans_args)
         try:
-            ct, l, cr = cv2.kmeans(img, k, None, self._crit, 10, self._flags)
+            kmeans.fit(img)
         except:
             raise KMeansException()
 
-        return ct, l.reshape(-1), cr
+        return kmeans.inertia_, kmeans.labels_, kmeans.cluster_centers_
 
     def _jump(self, img):
-        img = img.astype(np.float32)
         npixels = img.size
 
         best = None
