@@ -1,6 +1,5 @@
 import numpy as np
-from sklearn.cluster import KMeans
-from skimage.util import img_as_float
+from sklearn.cluster import MiniBatchKMeans
 
 from .exceptions import KMeansException
 from .task import Task
@@ -17,9 +16,8 @@ class Cluster(Task):
 
         super(Cluster, self).__init__(settings)
         self._kmeans_args = {
-            'init': 'random',
-            'tol': 0.5,
             'max_iter': 50,
+            'tol': 1.0,
         }
 
     def get(self, img):
@@ -27,10 +25,10 @@ class Cluster(Task):
         if a == 'kmeans':
             return self._jump(img)
         else:
-            raise ValueError('Unknown algorithm'.format(a))
+            raise ValueError('Unknown algorithm {}'.format(a))
 
     def _kmeans(self, img, k):
-        kmeans = KMeans(n_clusters=k, **self._kmeans_args)
+        kmeans = MiniBatchKMeans(n_clusters=k, **self._kmeans_args)
         try:
             kmeans.fit(img)
         except:

@@ -1,3 +1,5 @@
+import numpy as np
+
 from .back import Back
 from .cluster import Cluster
 from .name import Name
@@ -23,11 +25,30 @@ class ImageToColor(Task):
 
     def get(self, img):
         resized = self._resize.get(img)
-        mask = self._back.get(resized) | self._skin.get(resized)
-        k, labels, centers = self._cluster.get(resized[~mask])
-        centers = self._selector.get(k, labels, centers)
+        back_mask = self._back.get(resized)
+        skin_mask = self._skin.get(resized)
+        mask = back_mask | skin_mask
+        k, labels, clusters_centers = self._cluster.get(resized[~mask])
+        centers = self._selector.get(k, labels, clusters_centers)
         colors = [self._name.get(c) for c in centers]
-        return list({c for l in colors for c in l})
+        flattened = list({c for l in colors for c in l})
+
+        if self._settings['debug'] is None:
+            return flattened
+
+        colored_labels = np.zeros((labels.shape[0], 3), np.float64)
+        for i, c in enumerate(clusters_centers):
+            colored_labels[labels == i] = c
+
+        clusters = np.zeros(resized.shape, np.float64)
+        clusters[~mask] = colored_labels
+
+        return flattened, {
+            'resized': resized,
+            'back': back_mask,
+            'skin': skin_mask,
+            'clusters': clusters
+        }
 
     @staticmethod
     def _default_settings():

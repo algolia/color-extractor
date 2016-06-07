@@ -111,7 +111,5 @@ class Back(Task):
 
     @staticmethod
     def _sobel(img, sigma):
-        # if sigma > 0:
-        #     img = skf.gaussian(img, sigma, multichannel=True)
         gray = skc.rgb2gray(img)
         return skf.scharr(gray)
