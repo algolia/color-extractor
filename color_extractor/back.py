@@ -3,6 +3,7 @@ import skimage.filters as skf
 import skimage.color as skc
 import skimage.morphology as skm
 from skimage.measure import label
+from skimage.io import show, imshow
 
 from .task import Task
 
@@ -51,13 +52,16 @@ class Back(Task):
     def get(self, img):
         f = self._floodfill(img)
         g = self._global(img)
+        m = f | g
 
-        if np.count_nonzero(f) > 0.95 * f.size:
+        if np.count_nonzero(m) < 0.85 * m.size:
+            return m
+        if np.count_nonzero(g) < 0.85 * g.size:
             return g
-        elif np.count_nonzero(g) > 0.95 * g.size:
+        if np.count_nonzero(f) < 0.85 * f.size:
             return f
-        else:
-            return f | g
+
+        return np.zeros_like(m)
 
     def _global(self, img):
         h, w = img.shape[:2]
@@ -79,6 +83,9 @@ class Back(Task):
         back = Back._sobel(back, self._settings['blur_sigma'])
 
         back = back > 0.05
+        back = skm.skeletonize(back)
+        # imshow(back)
+        # show()
         labels = label(back, background=-1, connectivity=1)
 
         h, w = back.shape[:2]
@@ -87,16 +94,7 @@ class Back(Task):
         for l in (labels[i, j] for i, j in corners):
             flooded[labels == l] = True
 
-        s = self._settings['edge_thinning']
-        if s > 0:
-            # Thin edges.
-            idx = ~back
-            skm.binary_erosion(back, self._erode, out=back)
-            back[idx] = flooded[idx]
-            flooded = back
-        elif s == -1:
-            # Ignore edges.
-            flooded[back] = False
+        flooded[back] = True
 
         return flooded
 
@@ -112,4 +110,4 @@ class Back(Task):
     @staticmethod
     def _sobel(img, sigma):
         gray = skc.rgb2gray(img)
-        return skf.scharr(gray)
+        return skf.sobel(gray)

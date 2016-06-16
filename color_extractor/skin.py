@@ -26,8 +26,8 @@ class Skin(Task):
 
         t = self._settings['skin_type']
         if t == 'general':
-            self._lo = img_as_float(np.array([0, 48, 80], np.uint8))
-            self._up = img_as_float(np.array([20, 255, 255], np.uint8))
+            self._lo = np.array([0, 0.19, 0.31], np.float64)
+            self._up = np.array([0.1, 1., 1.], np.float64)
         elif t != 'none':
             raise NotImplementedError('Only general type is implemented')
 
@@ -46,7 +46,7 @@ class Skin(Task):
         mask = np.all((img >= self._lo) & (img <= self._up), axis=2)
 
         # Smooth the mask.
-        skm.binary_opening(mask, selem=self._k)
+        skm.binary_opening(mask, selem=self._k, out=mask)
         return gaussian(mask, 0.8, multichannel=True) != 0
 
     @staticmethod
