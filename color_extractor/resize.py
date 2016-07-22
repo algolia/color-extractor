@@ -1,6 +1,5 @@
 import numpy as np
 from skimage.transform import resize
-from skimage.util import img_as_ubyte
 
 from .task import Task
 

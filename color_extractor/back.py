@@ -3,7 +3,6 @@ import skimage.filters as skf
 import skimage.color as skc
 import skimage.morphology as skm
 from skimage.measure import label
-from skimage.io import show, imshow
 
 from .task import Task
 
@@ -15,8 +14,7 @@ class Back(Task):
     in the corners. This part is impacted by the `max_distance' and
     `use_lab' settings.
     The second one computes the edges of the image and uses a flood fill
-    starting from all corners. This part is impacted by the `edge_thinning'
-    and `blur_radius' settings.
+    starting from all corners.
     """
     def __init__(self, settings=None):
         """
@@ -29,36 +27,30 @@ class Back(Task):
             - use_lab: Whether to use the LAB color space to perform
               background removal. More expensive but closer to eye perception.
               (default: True)
-
-            - edge_thinning: How much edges must be thinned in the resulting
-              mask. `0' means no thinning at all, `-1` means considering
-              edges as part of the foreground in the resulting mask.
-              (default: 1)
-
-            - blur_sigma: The sigma of the Gaussian blur used before applying
-              edge detections. A higher value will yield to a more aggressive
-              background removal.
-              (default: 0.8)
         """
         if settings is None:
             settings = {}
 
         super(Back, self).__init__(settings)
 
-        k = self._settings['edge_thinning']
-        if k > 0:
-            self._erode = skm.square(k, np.bool)
-
     def get(self, img):
         f = self._floodfill(img)
         g = self._global(img)
         m = f | g
 
-        if np.count_nonzero(m) < 0.85 * m.size:
+        if np.count_nonzero(m) < 0.90 * m.size:
             return m
-        if np.count_nonzero(g) < 0.85 * g.size:
+
+        ng = np.count_nonzero(g)
+        nf = np.count_nonzero(f)
+
+        if ng < 0.90 * g.size and nf < 0.90 * f.size:
+            return g if ng > nf else f
+
+        if ng < 0.90 * g.size:
             return g
-        if np.count_nonzero(f) < 0.85 * f.size:
+
+        if nf < 0.90 * f.size:
             return f
 
         return np.zeros_like(m)
@@ -71,43 +63,47 @@ class Back(Task):
         if self._settings['use_lab']:
             img = skc.rgb2lab(img)
 
-        corners = [(0, 0), (h - 1, 0), (0, w - 1), (h - 1, w - 1)]
+        # Compute euclidean distance of each corner against all other pixels.
+        corners = [(0, 0), (-1, 0), (0, -1), (-1, -1)]
         for color in (img[i, j] for i, j in corners):
             norm = np.sqrt(np.sum(np.square(img - color), 2))
+            # Add to the mask pixels close to one of the corners.
             mask |= norm < max_distance
 
         return mask
 
     def _floodfill(self, img):
-        back = 1. - img
-        back = Back._sobel(back, self._settings['blur_sigma'])
-
+        back = Back._scharr(img)
+        # Binary thresholding.
         back = back > 0.05
+
+        # Thin all edges to be 1-pixel wide.
         back = skm.skeletonize(back)
-        # imshow(back)
-        # show()
+
+        # Edges are not detected on the borders, make artificial ones.
+        back[0, :] = back[-1, :] = back[:, 0] = back[:, -1] = True
+
+        # Label adjacent pixels of the same color.
         labels = label(back, background=-1, connectivity=1)
 
-        h, w = back.shape[:2]
-        corners = [(0, 0), (h - 1, 0), (0, w - 1), (h - 1, w - 1)]
-        flooded = back.copy()
+        # Count as background all pixels labeled like one of the corners.
+        corners = [(1, 0), (-2, 1), (1, -2), (-2, -2)]
         for l in (labels[i, j] for i, j in corners):
-            flooded[labels == l] = True
+            back[labels == l] = True
 
-        flooded[back] = True
-
-        return flooded
+        # Remove remaining inner edges.
+        return skm.opening(back)
 
     @staticmethod
     def _default_settings():
         return {
             'max_distance': 5,
             'use_lab': True,
-            'edge_thinning': 1,
-            'blur_sigma': 0.8,
         }
 
     @staticmethod
-    def _sobel(img, sigma):
-        gray = skc.rgb2gray(img)
-        return skf.sobel(gray)
+    def _scharr(img):
+        # Invert the image to ease edge detection.
+        img = 1. - img
+        grey = skc.rgb2grey(img)
+        return skf.scharr(grey)

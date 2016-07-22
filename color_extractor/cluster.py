@@ -1,5 +1,4 @@
-import numpy as np
-from sklearn.cluster import MiniBatchKMeans
+from sklearn.cluster import KMeans
 
 from .exceptions import KMeansException
 from .task import Task
@@ -28,7 +27,7 @@ class Cluster(Task):
             raise ValueError('Unknown algorithm {}'.format(a))
 
     def _kmeans(self, img, k):
-        kmeans = MiniBatchKMeans(n_clusters=k, **self._kmeans_args)
+        kmeans = KMeans(n_clusters=k, **self._kmeans_args)
         try:
             kmeans.fit(img)
         except:
