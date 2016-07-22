@@ -81,7 +81,8 @@ class Back(Task):
         back = skm.skeletonize(back)
 
         # Edges are not detected on the borders, make artificial ones.
-        back[0, :] = back[-1, :] = back[:, 0] = back[:, -1] = True
+        back[0, :] = back[-1, :] = True
+        back[:, 0] = back[:, -1] = True
 
         # Label adjacent pixels of the same color.
         labels = label(back, background=-1, connectivity=1)
