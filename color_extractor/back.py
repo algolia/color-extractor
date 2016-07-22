@@ -88,7 +88,7 @@ class Back(Task):
         labels = label(back, background=-1, connectivity=1)
 
         # Count as background all pixels labeled like one of the corners.
-        corners = [(1, 0), (-2, 1), (1, -2), (-2, -2)]
+        corners = [(1, 1), (-2, 1), (1, -2), (-2, -2)]
         for l in (labels[i, j] for i, j in corners):
             back[labels == l] = True
 
