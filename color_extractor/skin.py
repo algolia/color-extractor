@@ -1,5 +1,8 @@
-import cv2
 import numpy as np
+import skimage.morphology as skm
+from skimage.filters import gaussian
+from skimage.color import rgb2hsv
+from skimage.util import img_as_float
 
 from .task import Task
 
@@ -19,19 +22,19 @@ class Skin(Task):
             settings = {}
 
         super(Skin, self).__init__(settings)
-        self._k = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
+        self._k = skm.disk(1, np.bool)
 
         t = self._settings['skin_type']
         if t == 'general':
-            self._lo = np.array([0, 48, 80], np.uint8)
-            self._up = np.array([20, 255, 255], np.uint8)
+            self._lo = np.array([0, 0.19, 0.31], np.float64)
+            self._up = np.array([0.1, 1., 1.], np.float64)
         elif t != 'none':
             raise NotImplementedError('Only general type is implemented')
 
     def get(self, img):
         t = self._settings['skin_type']
         if t == 'general':
-            img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+            img = rgb2hsv(img)
         elif t == 'none':
             return np.zeros(img.shape[:2], np.bool)
         else:
@@ -40,11 +43,11 @@ class Skin(Task):
         return self._range_mask(img)
 
     def _range_mask(self, img):
-        mask = cv2.inRange(img, self._lo, self._up)
+        mask = np.all((img >= self._lo) & (img <= self._up), axis=2)
 
         # Smooth the mask.
-        mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, self._k)
-        return cv2.GaussianBlur(mask, (3, 3), 0) != 0
+        skm.binary_opening(mask, selem=self._k, out=mask)
+        return gaussian(mask, 0.8, multichannel=True) != 0
 
     @staticmethod
     def _default_settings():

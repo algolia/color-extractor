@@ -1,5 +1,8 @@
-import cv2
 import numpy as np
+import skimage.filters as skf
+import skimage.color as skc
+import skimage.morphology as skm
+from skimage.measure import label
 
 from .task import Task
 
@@ -11,8 +14,7 @@ class Back(Task):
     in the corners. This part is impacted by the `max_distance' and
     `use_lab' settings.
     The second one computes the edges of the image and uses a flood fill
-    starting from all corners. This part is impacted by the `edge_thinning'
-    and `blur_radius' settings.
+    starting from all corners.
     """
     def __init__(self, settings=None):
         """
@@ -25,93 +27,84 @@ class Back(Task):
             - use_lab: Whether to use the LAB color space to perform
               background removal. More expensive but closer to eye perception.
               (default: True)
-
-            - edge_thinning: How much edges must be thinned in the resulting
-              mask. `0' or `1' means no thinning at all, `-1` means considering
-              edges as part of the foreground in the resulting mask.
-              (default: 3)
-
-            - blur_radius: The radius of the Gaussian blur used before applying
-              edge detections. A higher value will yield to a more aggressive
-              background removal. This setting must be an odd integer.
-              (default: 3)
         """
         if settings is None:
             settings = {}
 
         super(Back, self).__init__(settings)
 
-        k = self._settings['edge_thinning']
-        if k > 1:
-            self._erode = cv2.getStructuringElement(cv2.MORPH_RECT, (k, k))
-
     def get(self, img):
-        return self._floodfill(img) | self._global(img)
+        f = self._floodfill(img)
+        g = self._global(img)
+        m = f | g
+
+        if np.count_nonzero(m) < 0.90 * m.size:
+            return m
+
+        ng = np.count_nonzero(g)
+        nf = np.count_nonzero(f)
+
+        if ng < 0.90 * g.size and nf < 0.90 * f.size:
+            return g if ng > nf else f
+
+        if ng < 0.90 * g.size:
+            return g
+
+        if nf < 0.90 * f.size:
+            return f
+
+        return np.zeros_like(m)
 
     def _global(self, img):
         h, w = img.shape[:2]
-        mask = np.zeros((h, w), np.bool)
+        mask = np.zeros((h, w), dtype=np.bool)
         max_distance = self._settings['max_distance']
-        corners = [(0, 0), (h - 1, 0), (0, w - 1), (h - 1, w - 1)]
 
         if self._settings['use_lab']:
-            img = Back._bgr2lab(img)
+            img = skc.rgb2lab(img)
 
+        # Compute euclidean distance of each corner against all other pixels.
+        corners = [(0, 0), (-1, 0), (0, -1), (-1, -1)]
         for color in (img[i, j] for i, j in corners):
             norm = np.sqrt(np.sum(np.square(img - color), 2))
+            # Add to the mask pixels close to one of the corners.
             mask |= norm < max_distance
 
         return mask
 
     def _floodfill(self, img):
-        back = 255 - img
-        back = Back._sobel(back, self._settings['blur_radius'])
-        _, back = cv2.threshold(back, 24, 128, cv2.THRESH_BINARY)
+        back = Back._scharr(img)
+        # Binary thresholding.
+        back = back > 0.05
 
-        h, w = back.shape[:2]
-        mask = np.zeros((h + 2, w + 2), np.uint8)
+        # Thin all edges to be 1-pixel wide.
+        back = skm.skeletonize(back)
 
-        corners = [(0, 0), (h - 1, 0), (0, w - 1), (h - 1, w - 1)]
-        for corner in corners:
-            cv2.floodFill(back, mask, corner, 255)
+        # Edges are not detected on the borders, make artificial ones.
+        back[0, :] = back[-1, :] = True
+        back[:, 0] = back[:, -1] = True
 
-        s = self._settings['edge_thinning']
-        if s > 1:
-            # Thin edges.
-            contours = np.zeros((h, w), np.uint8)
-            contours[back == 128] = 255
-            contours = cv2.erode(contours, self._erode)
-            idx = (back != 128)
-            contours[idx] = back[idx]
-            back = contours
-        elif s >= 0:
-            # Do not thin the edges.
-            back[back == 128] = 255
-        else:
-            # Ignore edges.
-            back[back == 128] = 0
+        # Label adjacent pixels of the same color.
+        labels = label(back, background=-1, connectivity=1)
 
-        return back.astype(np.bool)
+        # Count as background all pixels labeled like one of the corners.
+        corners = [(1, 1), (-2, 1), (1, -2), (-2, -2)]
+        for l in (labels[i, j] for i, j in corners):
+            back[labels == l] = True
+
+        # Remove remaining inner edges.
+        return skm.opening(back)
 
     @staticmethod
     def _default_settings():
         return {
             'max_distance': 5,
             'use_lab': True,
-            'edge_thinning': 3,
-            'blur_radius': 3,
         }
 
     @staticmethod
-    def _sobel(img, radius):
-        if radius > 0:
-            img = cv2.GaussianBlur(img, (radius, radius), 0)
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        sx = cv2.convertScaleAbs(cv2.Sobel(gray, cv2.CV_16S, 1, 0, ksize=3))
-        sy = cv2.convertScaleAbs(cv2.Sobel(gray, cv2.CV_16S, 0, 1, ksize=3))
-        return (0.5 * sx + 0.5 * sy).astype(np.uint8)
-
-    @staticmethod
-    def _bgr2lab(img):
-        floated = (img / 255.).astype(np.float32)
-        return cv2.cvtColor(floated, cv2.COLOR_BGR2LAB)
+    def _scharr(img):
+        # Invert the image to ease edge detection.
+        img = 1. - img
+        grey = skc.rgb2grey(img)
+        return skf.scharr(grey)

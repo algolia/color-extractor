@@ -1,9 +1,8 @@
-from os.path import abspath
-from urllib.parse import quote
-from urllib.request import urlopen
+from os.path import basename, join, splitext
 
-import cv2
-import numpy as np
+from skimage.io import imread, imsave
+from skimage.util import img_as_float
+from skimage.color import gray2rgb
 
 from .image_to_color import ImageToColor
 from .task import Task
@@ -18,12 +17,33 @@ class FromFile(Task):
         self._image_to_color = ImageToColor(samples, labels, self._settings)
 
     def get(self, uri):
-        if uri.find('//') == -1:
-            uri = 'file://' + quote(abspath(uri))
+        i = imread(uri)
+        if len(i.shape) == 2:
+            i = gray2rgb(i)
+        else:
+            i = i[:, :, :3]
+        c = self._image_to_color.get(i)
 
-        # TODO: Error reporting.
-        resp = urlopen(uri)
-        buf = np.fromstring(resp.read(), np.uint8)
-        img = cv2.imdecode(buf, cv2.IMREAD_COLOR)
+        dbg = self._settings['debug']
+        if dbg is None:
+            return c
 
-        return self._image_to_color.get(img)
+        c, imgs = c
+        b = splitext(basename(uri))[0]
+        imsave(join(dbg, b + '-resized.jpg'), imgs['resized'])
+        imsave(join(dbg, b + '-back.jpg'), img_as_float(imgs['back']))
+        imsave(join(dbg, b + '-skin.jpg'), img_as_float(imgs['skin']))
+        imsave(join(dbg, b + '-clusters.jpg'), imgs['clusters'])
+
+        return c, {
+            'resized': join(dbg, b + '-resized.jpg'),
+            'back': join(dbg, b + '-back.jpg'),
+            'skin': join(dbg, b + '-skin.jpg'),
+            'clusters': join(dbg, b + '-clusters.jpg'),
+        }
+
+    @staticmethod
+    def _default_settings():
+        return {
+            'debug': None,
+        }

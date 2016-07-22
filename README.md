@@ -154,21 +154,6 @@ The available settings are:
   computed distances are closer to human perception.
   Default is `True`.
 
-- `'edge_thinning'` The second algorithm has the choice of considering detected
-  edges as part of the foreground or part of the background. It also can thin
-  the edges while considering them part of the background, which avoid losing
-  too much of the object pixels.
-  To consider edges as part of the object `-1` must be passed. To consider edges
-  as part of the background `0` or `1` must be passed. All other positive
-  integer will thin the edges; the bigger the value, the thinner the edges.
-  Default is `3`.
-
-- `'blur_radius'` Prior to applying the Sobel filter, the image is blurred using
-  a Gaussian filter. The size of the filter can be specified by this setting.
-  Bigger values will yield to less detected edges and as a result a more
-  aggressive background detection.
-  Default is `3`.
-
 ### Skin Detection
 
 This step is available as the `Skin` class.

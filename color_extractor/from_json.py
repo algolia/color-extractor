@@ -43,7 +43,7 @@ class FromJson(Task):
             colors = self._from_file.get(uri)
         except Exception as e:
             colors = []
-            m = 'Unable to find colors for {}: `{}`'.format(uri, e)
+            m = 'Unable to find colors for {}: `{}`\n'.format(uri, e)
             sys.stderr.write(m)
 
         out.write(',"{}":{}'.format(self._colors_field, json.dumps(colors)))

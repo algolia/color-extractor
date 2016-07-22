@@ -109,9 +109,12 @@ def _images_files(args, samples, labels, settings):
     f = FromFile(samples, labels, settings)
     for file_ in args['<files>']:
         try:
-            print(','.join(f.get(file_)))
+            colors = f.get(file_)
+            if isinstance(colors, tuple):
+                colors = colors[0]
+            print(','.join(colors))
         except Exception as e:
-            m = 'Unable to find colors for {}: `{}`'.format(file_, e)
+            m = 'Unable to find colors for {}: `{}`\n'.format(file_, e)
             stderr.write(m)
             print('')
 

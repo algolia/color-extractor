@@ -76,6 +76,7 @@ class Name(Task):
     def get(self, sample):
         """Return the color names for `sample`"""
         labels = []
+        sample = sample * 255
 
         if self._settings['hard_monochrome']:
             labels = self._hard_monochrome(sample)
