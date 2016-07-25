@@ -8,6 +8,8 @@ background (single color, gradient, low contrast, etc.). The algorithm may
 still perform if any of those two conditions is not met, but be aware that its
 precision will certainly be hindered.
 
+***A blog post describing this experiment can be found [here](https://blog.algolia.com/how-we-handled-color-identification/).***
+
 ## Installation
 
 The script and the library are currently targeting python 3 and won't work with
