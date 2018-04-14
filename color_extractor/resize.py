@@ -1,3 +1,4 @@
+from __future__ import division
 import numpy as np
 from skimage.transform import resize
 
@@ -37,7 +38,7 @@ class Resize(Task):
         src_h, src_w = img.shape[:2]
         dst_h = self._settings['rows']
         dst_w = int((dst_h / src_h) * src_w)
-        return resize(img, (dst_h, dst_w))
+        return resize(img, (dst_h, dst_w), mode='constant')
 
     def _crop(self, img):
         src_h, src_w = img.shape[:2]
