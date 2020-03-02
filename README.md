@@ -10,6 +10,9 @@ precision will certainly be hindered.
 
 ***A blog post describing this experiment can be found [here](https://blog.algolia.com/how-we-handled-color-identification/).***
 
+> Note: this project is released as-is, and is no longer maintained by us,
+> however feel free to edit the code and use as you see fit.
+
 ## Installation
 
 The script and the library are currently targeting python 3 and won't work with
