@@ -1,5 +1,5 @@
 cycler==0.10.0
-dask==0.10.1
+dask==2021.10.0
 decorator==4.0.10
 docopt==0.6.2
 ijson==2.3
